@@ -5,6 +5,16 @@ import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.figure_factory as ff
+import pickle
+import numpy as np
+import time
+#from tensorflow import keras
+
+
+modelrfc = pickle.load(open("modelrfc.pkl","rb"))
+modellr = pickle.load(open("modellr.pkl","rb"))
+#modelnn = pickle.load(open("modelnn.pkl","rb"))
+transformer = pickle.load(open("transformer.pkl","rb"))
 
 df = pd.read_csv("athlete_events.csv")
 region_df = pd.read_csv("noc_regions.csv")
@@ -15,15 +25,15 @@ st.sidebar.title("Olympics Data Analyzer and Predictor")
 st.sidebar.image('https://camo.githubusercontent.com/d7a9083432f8e475816a51ccc485dfabf2c50e81b44996014ddefc2abe40f5e7/68747470733a2f2f75706c6f61642e77696b696d656469612e6f72672f77696b6970656469612f636f6d6d6f6e732f7468756d622f352f35632f4f6c796d7069635f72696e67735f776974686f75745f72696d732e7376672f3132303070782d4f6c796d7069635f72696e67735f776974686f75745f72696d732e7376672e706e67')
 user_menu = st.sidebar.radio(
     'Select an Option',
-    ('Medal Tally','Overall Analysis','Country-wise Analysis','Athlete wise Analysis',"Predictor")
+    ('Medal Tally',"Medal Predictor",'Overall Analysis','Country-wise Analysis','Athlete-wise Analysis',"About")
 )
 
 
 if user_menu == "Medal Tally":
-    st.header("Medal Tally")
+    st.header("Medal Tally (From Athens 1896 to Rio 2016)")
     years,country = helper.country_year_list(df)
-    selected_year = st.sidebar.selectbox("Select Year",years)
-    selected_country = st.sidebar.selectbox("Select Country", country)
+    selected_year = st.selectbox("Select Year",years)
+    selected_country = st.selectbox("Select Country", country)
 
     medal_tally = helper.fetch_medal_tally(df,selected_year,selected_country)
     medal_tally.rename(columns = {"region":"Country"},inplace=True)
@@ -102,12 +112,12 @@ if user_menu == "Overall Analysis":
 
 if user_menu == "Country-wise Analysis":
 
-    st.sidebar.title("Country-wise Analysis")
+    st.title("Country-wise Analysis")
 
     country_list = df["region"].dropna().unique().tolist()
     country_list.sort()
 
-    selected_country = st.sidebar.selectbox("Select a Country",country_list)
+    selected_country = st.selectbox("Select a Country",country_list)
 
     country_df = helper.yearwise_medal_tally(df,selected_country)
 
@@ -125,7 +135,7 @@ if user_menu == "Country-wise Analysis":
     top10_df = helper.most_successful_countrywise(df,selected_country)
     st.table(top10_df)
 
-if user_menu == "Athlete wise Analysis":
+if user_menu == "Athlete-wise Analysis":
     athlete_df = df.drop_duplicates(subset=["Name", "region"])
 
     x1 = athlete_df["Age"].dropna()
@@ -176,7 +186,75 @@ if user_menu == "Athlete wise Analysis":
     #fig.update_layout(autosize=False, width=1000, height=600)
     st.plotly_chart(fig)
 
+if user_menu == "Medal Predictor":
+    st.title("Olympics Medal Predictor")
+    selected_col = ["Sex" , "region" ,"Sport","Height" , "Weight" , "Age" ]
+    sport = ['Aeronautics', 'Alpine Skiing', 'Alpinism', 'Archery', 'Art Competitions', 'Athletics', 'Badminton', 'Baseball', 'Basketball', 'Basque Pelota', 'Beach Volleyball', 'Biathlon', 'Bobsleigh', 'Boxing', 'Canoeing', 'Cricket', 'Croquet', 'Cross Country Skiing', 'Curling', 'Cycling', 'Diving', 'Equestrianism', 'Fencing', 'Figure Skating', 'Football', 'Freestyle Skiing', 'Golf', 'Gymnastics', 'Handball', 'Hockey', 'Ice Hockey', 'Jeu De Paume', 'Judo', 'Lacrosse', 'Luge', 'Military Ski Patrol', 'Modern Pentathlon', 'Motorboating', 'Nordic Combined', 'Polo', 'Racquets', 'Rhythmic Gymnastics', 'Roque', 'Rowing', 'Rugby', 'Rugby Sevens', 'Sailing', 'Shooting', 'Short Track Speed Skating', 'Skeleton', 'Ski Jumping', 'Snowboarding', 'Softball', 'Speed Skating', 'Swimming', 'Synchronized Swimming', 'Table Tennis', 'Taekwondo', 'Tennis', 'Trampolining', 'Triathlon', 'Tug-Of-War', 'Volleyball', 'Water Polo', 'Weightlifting', 'Wrestling']
+    country = ['Afghanistan', 'Albania', 'Algeria', 'American Samoa', 'Andorra', 'Angola', 'Antigua', 'Argentina', 'Armenia', 'Aruba', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bermuda', 'Bhutan', 'Boliva', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 'Cape Verde', 'Cayman Islands', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Cook Islands', 'Costa Rica', 'Croatia', 'Cuba', 'Curacao', 'Cyprus', 'Czech Republic', 'Democratic Republic of the Congo', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guam', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana', 'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Individual Olympic Athletes', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kosovo', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Macedonia', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Puerto Rico', 'Qatar', 'Republic of Congo', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts', 'Saint Lucia', 'Saint Vincent', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Swaziland', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad', 'Tunisia', 'Turkey', 'Turkmenistan', 'UK', 'USA', 'Uganda', 'Ukraine', 'United Arab Emirates', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Venezuela', 'Vietnam', 'Virgin Islands, British', 'Virgin Islands, US', 'Yemen', 'Zambia', 'Zimbabwe']
+    with st.form("my_form"):
+        Sex = st.selectbox("Select Sex",["M","F"])
+        Age = st.slider("Select Age",10,97)
+        Height = st.slider("Select Height(In centimeters)",127,226)
+        Weight = st.slider("Select Weight(In kilograms)",25,214)
+        region = st.selectbox("Select Country",country)
+        Sport = st.selectbox("Select Sport",sport)
+        input_model = st.selectbox("Select Prediction Model",["Random Forest Classifier","Logistic Regression","Neutral Network"])
 
+
+        
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            inputs = [Sex,region,Sport,Height,Weight,Age]
+            inputs = pd.DataFrame([inputs],columns=selected_col)
+            inputs = transformer.transform(inputs)
+            if input_model == "Random Forest Classifier":
+                model = modelrfc
+            if input_model == "Logistic Regression":
+                model = modellr
+            if input_model == "Neutral Network":
+                model = modelrfc
+            prediction = model.predict(inputs)
+            #prediction = np.argmax(prediction[0])
+            with st.spinner('Predicting output...'):
+                time.sleep(1)
+                if prediction[0] == 0 :
+                    ans = "Low"
+                    st.warning("Medal winning probability is {}".format(ans),icon="⚠️")
+                else :
+                    ans = "High"
+                    st.success("Medal winning probability is {}".format(ans),icon="✅")
+
+if user_menu == "About":
+    
+    lt = ["Identified the most successful countries and athletes in terms of medal count.",
+          "Performed deeper analyses on specific countries or athletes to explore their performance over time.",
+          "Determined if certain countries or athletes have dominant sports where they excel.",
+          "Plotted trends over time, such as the number of participants, gender ratio, or medal distributions.",
+          "Visualized the success of countries or athletes based on the number of medals won.",
+          ]
+    st.header("120 years of Olympic history: athletes and results")
+
+    st.markdown("For this Web Application , I have used a historical dataset on the modern Olympic Games,"
+                "including all the Games from Athens 1896 to Rio 2016. I got this data set from Kaggle whose link is given below:")
+    st.write("Dataset : [Link](https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results)")
+    st.header("About Olympics Data Analysis:")
+    st.write("I have,")
+    for item in lt:
+        st.markdown("* " + item )
+    st.header("About Olympics Medal Predictor:")   
+    selected_col = ["Sex" , "Region" ,"Sport","Height" , "Weight" , "Age" ]
+    st.write("I made a Olympic Medal predictor which can predict the possibility of an athlete",
+             "winning an Olympics Medal on the basis of his/her: " + str(selected_col))
+    #for item in selected_col:
+    #st.markdown(selected_col)
+    st.write("In this Medal Predictor, I have used two Maching Learning algorithms and a Artificial Neural Network (Deep Learning) namely:")
+    model = ["Random Forest Classifier","Logistic Regression","Neutral Network"]
+    for item in model:
+        st.markdown("* " + item )   
+    st.write("Github link for this project [Link](https://github.com/rahulr2109/geek-o-lympics-hackathon-Analyser-and-Predictor)")    
+     
+    
+    
 
 
 
